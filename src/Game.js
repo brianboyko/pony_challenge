@@ -1,5 +1,6 @@
 import request from "superagent";
 import Maze from "./Maze";
+import djikstra from "./djikstra";
 
 class Game {
   constructor({ width, height, playerName, difficulty }) {
@@ -94,10 +95,10 @@ class Game {
       ])
         .then(([maze, print]) => {
           const { pony, domokun, size, data } = maze.body;
-          const { endPoint } = maze.body["end-point"];
-          this.setCharacter("pony", pony, size[0], size[1]);
-          this.setCharacter("exit", endPoint, size[0], size[1]);
-          this.setCharacter("domokun", domokun, size[0], size[1]);
+          const endPoint = maze.body["end-point"];
+          this.setCharacter("pony", pony[0], size[0], size[1]);
+          this.setCharacter("exit", endPoint[0], size[0], size[1]);
+          this.setCharacter("domokun", domokun[0], size[0], size[1]);
           this.mazeData = data;
           this.mazePrint = print.body;
           resolve();
@@ -112,11 +113,22 @@ class Game {
     return new Promise((resolve, reject) => {
       this.getMaze()
         .then(() => {
-          this.maze = new Maze(this.mazeData, this.width, this.height);
+          console.log(this);
+          this.maze = new Maze(this.mazeData, this.width, this.height, {
+            ponyPos: this.pony.position,
+            domoPos: this.domokun.position,
+            exitPos: this.exit.position
+          });
           console.log("CONTROL");
           console.log(this.mazePrint);
           console.log("Experiment");
-          console.log(this.maze.print());
+          const myLittleDjikstra = djikstra(this.maze, {
+            ponyPos: this.pony.position,
+            domoPos: this.domokun.position,
+            exitPos: this.exit.position
+          });
+          console.log(myLittleDjikstra);
+          console.log(this.maze.print(myLittleDjikstra.path));
           resolve("DONE");
         })
         .catch(err => {

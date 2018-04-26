@@ -1,7 +1,7 @@
 import chunk from "lodash/chunk";
 
 class Square {
-  constructor(position, mazeWidth, mazeHeight) {
+  constructor(position, mazeWidth, mazeHeight, { ponyPos, domoPos, exitPos }) {
     this.position = position;
     this.x = position % mazeWidth;
     this.y = ~~(position / mazeHeight);
@@ -9,31 +9,72 @@ class Square {
     this.south = null;
     this.west = null;
     this.east = null;
+    this.isPony = ponyPos === position;
+    this.isDomo = domoPos === position;
+    this.isExit = exitPos === position;
   }
   setSide(side, square) {
     this[side] = square;
   }
-  visualize() {
+  setCharacter(char, bool) {
+    if ("pony" === char) {
+      this.isPony = bool;
+    }
+    if ("domo" === char) {
+      this.isDomo = bool;
+    }
+  }
+  visualize(pathList) {
+    let middle = " ";
+    if (this.isPony && this.isDomo) {
+      middle = "X"; // for dead
+      console.log("GAME OVER");
+    } else if (this.isExit && this.isPony) {
+      middle = "V"; // for victory
+      console.log("VICTORY!");
+    } else if (this.isDomo) {
+      middle = "D";
+    } else if (this.isPony) {
+      middle = "P";
+    } else if (this.isExit) {
+      middle = "E";
+    } else if (pathList && pathList.includes(this.position)){
+      middle = "."
+    } 
     return [
-      ["+", this.north === null ? "x" : " ", "+"].join(""),
+      ["+", this.north === null ? "-" : " ", "+"].join(""),
       [
-        this.west === null ? "x" : " ",
-        " ",
-        this.east === null ? "x" : " "
+        this.west === null ? "|" : " ",
+        middle,
+        this.east === null ? "|" : " "
       ].join(""),
-      ["+", this.south === null ? "x" : " ", "+"].join("")
+      ["+", this.south === null ? "-" : " ", "+"].join("")
     ];
   }
 }
 
 class Maze {
-  constructor(data, mazeWidth, mazeHeight) {
-    this.maze = [new Square(0, mazeWidth, mazeHeight)];
+  constructor(data, mazeWidth, mazeHeight, { ponyPos, domoPos, exitPos }) {
+    console.log({ ponyPos, domoPos, exitPos });
+    this.maze = [
+      new Square(0, mazeWidth, mazeHeight, {
+        ponyPos,
+        domoPos,
+        exitPos
+      })
+    ];
     this.height = mazeHeight;
     this.width = mazeWidth;
     this.origin = this.maze[0];
+    this.ponyPos = ponyPos;
+    this.domoPos = domoPos;
+    this.exitPos = exitPos;
     for (let i = 1, l = data.length; i < data.length; i++) {
-      let sq = new Square(i, mazeWidth, mazeHeight);
+      let sq = new Square(i, mazeWidth, mazeHeight, {
+        ponyPos,
+        domoPos,
+        exitPos
+      });
       let northWall = data[i].includes("north") || i < mazeWidth;
       let westWall = data[i].includes("west") || i % mazeWidth === 0;
       let southWall = ~~(i / mazeHeight) === mazeHeight - 1;
@@ -51,9 +92,27 @@ class Maze {
       this.maze.push(sq);
     }
   }
-
-  print() {
-    let visuals = this.maze.map(sq => sq.visualize());
+  setCharactersInMaze({ ponyPos, domoPos }) {
+    const oldPony = this.ponyPos;
+    const oldDomo = this.domoPos;
+    this.ponyPos = ponyPos;
+    this.domoPos = domoPos;
+    this.maze[oldPony].setCharacter("pony", false);
+    this.maze[this.ponyPos].setCharacter("pony", true);
+    this.maze[oldDomo].setCharacter("domo", false);
+    this.maze[this.domoPos].setCharacter("domo", true);
+  }
+  getMaze() {
+    return this.maze;
+  }
+  getSquare(index){
+    return this.maze[index]
+  }
+  getLength() {
+    return this.width * this.height;
+  }
+  print(pathList) {
+    let visuals = this.maze.map((sq, i) => sq.visualize(pathList));
     return chunk(visuals, this.width)
       .map(row =>
         row

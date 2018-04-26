@@ -16,6 +16,10 @@ var _Maze = require("./Maze");
 
 var _Maze2 = _interopRequireDefault(_Maze);
 
+var _djikstra = require("./djikstra");
+
+var _djikstra2 = _interopRequireDefault(_djikstra);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -122,11 +126,11 @@ var Game = function () {
               domokun = _maze$body.domokun,
               size = _maze$body.size,
               data = _maze$body.data;
-          var endPoint = maze.body["end-point"].endPoint;
 
-          _this2.setCharacter("pony", pony, size[0], size[1]);
-          _this2.setCharacter("exit", endPoint, size[0], size[1]);
-          _this2.setCharacter("domokun", domokun, size[0], size[1]);
+          var endPoint = maze.body["end-point"];
+          _this2.setCharacter("pony", pony[0], size[0], size[1]);
+          _this2.setCharacter("exit", endPoint[0], size[0], size[1]);
+          _this2.setCharacter("domokun", domokun[0], size[0], size[1]);
           _this2.mazeData = data;
           _this2.mazePrint = print.body;
           resolve();
@@ -143,11 +147,22 @@ var Game = function () {
 
       return new Promise(function (resolve, reject) {
         _this3.getMaze().then(function () {
-          _this3.maze = new _Maze2.default(_this3.mazeData, _this3.width, _this3.height);
+          console.log(_this3);
+          _this3.maze = new _Maze2.default(_this3.mazeData, _this3.width, _this3.height, {
+            ponyPos: _this3.pony.position,
+            domoPos: _this3.domokun.position,
+            exitPos: _this3.exit.position
+          });
           console.log("CONTROL");
           console.log(_this3.mazePrint);
           console.log("Experiment");
-          console.log(_this3.maze.print());
+          var myLittleDjikstra = (0, _djikstra2.default)(_this3.maze, {
+            ponyPos: _this3.pony.position,
+            domoPos: _this3.domokun.position,
+            exitPos: _this3.exit.position
+          });
+          console.log(myLittleDjikstra);
+          console.log(_this3.maze.print(myLittleDjikstra.path));
           resolve("DONE");
         }).catch(function (err) {
           console.log(err);
