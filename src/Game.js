@@ -67,7 +67,6 @@ class Game {
         .then(serverMaze => {
           const { pony, domokun, size, data } = serverMaze.body;
           const endPoint = serverMaze.body["end-point"];
-          console.log("inGetMaze()", { pony, domokun, endPoint });
           this.maze = new Maze(data, this.width, this.height, {
             ponyPos: pony[0],
             domoPos: domokun[0],
@@ -128,7 +127,7 @@ class Game {
           resolve({ maze: newMaze, state: this.state, lastMove: nextMove });
         })
         .catch(err => {
-          console.error(err);
+          console.error({err});
           reject(err);
         });
     });

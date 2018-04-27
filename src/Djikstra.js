@@ -64,7 +64,6 @@ class DjikstraMap {
 const djikstra = (maze, priorMove) => {
   const { ponyPos, domoPos, exitPos } = maze;
   // distances that are unknown are assumed to be infinity
-  console.log("djikstra");
   const djikstraMap = new DjikstraMap(maze.getLength());
 
   // don't visit me if I don't exist, or I contain a monster, or you've visited before.
@@ -136,7 +135,6 @@ const djikstra = (maze, priorMove) => {
   };
   const getLegalMoves = priorMove => {
     let returningMove = oppositeDirection[priorMove];
-    console.log({ priorMove, returningMove });
     let square = maze.getSquare(ponyPos);
     let legalMoves = ["west", "east", "north", "south"].filter(dir => {
       return square[dir] !== null;
