@@ -55,10 +55,8 @@ var Square = function () {
       var middle = " ";
       if (this.isPony && this.isDomo) {
         middle = "X"; // for dead
-        console.log("GAME OVER");
       } else if (this.isExit && this.isPony) {
         middle = "V"; // for victory
-        console.log("VICTORY!");
       } else if (this.isDomo) {
         middle = "D";
       } else if (this.isPony) {

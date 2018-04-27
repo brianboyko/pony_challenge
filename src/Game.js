@@ -3,7 +3,8 @@ import Maze from "./Maze";
 import djikstra from "./djikstra";
 
 class Game {
-  constructor({ width, height, playerName, difficulty }) {
+  constructor({ width, height, difficulty }) {
+    console.log({width, height, difficulty})
     if (!width || width < 15 || width > 25) {
       throw new Error("Invalid width - must be between 15 and 25 inclusive");
     }
@@ -16,7 +17,6 @@ class Game {
     (this.state = "active"), (this.legalMove = true);
     this.width = width;
     this.height = height;
-    this.playerName = playerName;
     this.difficulty = difficulty;
     this.mazeId = null;
     this.maze = null;
@@ -29,7 +29,7 @@ class Game {
         .send({
           "maze-width": this.width,
           "maze-height": this.height,
-          "maze-player-name": this.playerName,
+          "maze-player-name": "Derpy Hooves",
           difficulty: this.difficulty
         })
         .then(response => {

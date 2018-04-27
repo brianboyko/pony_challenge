@@ -26,11 +26,11 @@ var Game = function () {
   function Game(_ref) {
     var width = _ref.width,
         height = _ref.height,
-        playerName = _ref.playerName,
         difficulty = _ref.difficulty;
 
     _classCallCheck(this, Game);
 
+    console.log({ width: width, height: height, difficulty: difficulty });
     if (!width || width < 15 || width > 25) {
       throw new Error("Invalid width - must be between 15 and 25 inclusive");
     }
@@ -43,7 +43,6 @@ var Game = function () {
     this.state = "active", this.legalMove = true;
     this.width = width;
     this.height = height;
-    this.playerName = playerName;
     this.difficulty = difficulty;
     this.mazeId = null;
     this.maze = null;
@@ -58,7 +57,7 @@ var Game = function () {
         _superagent2.default.post("https://ponychallenge.trustpilot.com/pony-challenge/maze").set("Content-Type", "application/json").send({
           "maze-width": _this.width,
           "maze-height": _this.height,
-          "maze-player-name": _this.playerName,
+          "maze-player-name": "Derpy Hooves",
           difficulty: _this.difficulty
         }).then(function (response) {
           _this.mazeId = response.body.maze_id;
@@ -98,7 +97,6 @@ var Game = function () {
               data = _serverMaze$body.data;
 
           var endPoint = serverMaze.body["end-point"];
-          console.log("inGetMaze()", { pony: pony, domokun: domokun, endPoint: endPoint });
           _this2.maze = new _Maze2.default(data, _this2.width, _this2.height, {
             ponyPos: pony[0],
             domoPos: domokun[0],
@@ -154,7 +152,7 @@ var Game = function () {
         }).then(function (newMaze) {
           resolve({ maze: newMaze, state: _this4.state, lastMove: nextMove });
         }).catch(function (err) {
-          console.error(err);
+          console.error({ err: err });
           reject(err);
         });
       });

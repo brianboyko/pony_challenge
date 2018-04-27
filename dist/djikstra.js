@@ -104,7 +104,6 @@ var djikstra = function djikstra(maze, priorMove) {
       exitPos = maze.exitPos;
   // distances that are unknown are assumed to be infinity
 
-  console.log("djikstra");
   var djikstraMap = new DjikstraMap(maze.getLength());
 
   // don't visit me if I don't exist, or I contain a monster, or you've visited before.
@@ -165,7 +164,6 @@ var djikstra = function djikstra(maze, priorMove) {
   };
   var getLegalMoves = function getLegalMoves(priorMove) {
     var returningMove = oppositeDirection[priorMove];
-    console.log({ priorMove: priorMove, returningMove: returningMove });
     var square = maze.getSquare(ponyPos);
     var legalMoves = ["west", "east", "north", "south"].filter(function (dir) {
       return square[dir] !== null;
