@@ -15,30 +15,49 @@ const end = ending => {
   console.log("Game Over:", ending);
 };
 
-const calcMove = maze => {
-  let move = djikstra(maze);
-  console.log(maze.print(move.path));
-  return move.nextMove;
+const calcMove = (maze, priorMove) => {
+  let d = djikstra(maze, priorMove);
+  console.log(maze.print(d.path));
+  return { nextMove: d.nextMove, legalMoves: d.legalMoves };
 };
-let count = 0;
 
+let count = 0;
+let priorMove = null;
 const promiseLoop = (g, maze) => {
   console.log("move#", count++);
-  const move = calcMove(maze);
-  return g.move(move).then(postMove => {
+  const { nextMove, legalMoves } = calcMove(maze, priorMove);
+  console.log({ nextMove, legalMoves });
+  priorMove = nextMove;
+  return g.move(nextMove, legalMoves).then(postMove => {
+    priorMove = postMove.lastMove;
     if (postMove.state !== "active") {
-      console.log("postMove.state", postMove.state)
-      return "done";
+      console.log("postMove.state", postMove.state);
+      if (postMove.state === "won") {
+        return "CONGRATULATIONS!";
+      }
+      if (postMove.state === "over"){
+        return "THE DOMOKUN HAS EATEN YOU. DISHONOR ON YOU. DISHONOR ON YOUR FAMILY. DISHONOR ON YOUR COW"
+      }
+      return postMove.state;
     } else {
       return delayLoop(g, postMove.maze);
     }
   });
 };
 
-const delayLoop = (g, maze) => new Promise((resolve) => {
-  setTimeout(() => resolve(promiseLoop(g, maze)), 2000)
-})
+const DELAY = 0;
+const delayLoop = (g, maze) =>
+  new Promise(resolve => {
+    if (DELAY) {
+      setTimeout(() => resolve(promiseLoop(g, maze)), 2000);
+    } else {
+      resolve(promiseLoop(g, maze));
+    }
+  });
 
-g.init().then(({ maze, state }) => {
-  return delayLoop(g, maze).then(status => console.log(status));
-}).catch((err) => console.error({err}))
+g
+  .init()
+  .then(({ maze, state }) => {
+    return delayLoop(g, maze).then(status => console.log(status));
+  })
+  .catch(err => console.error({ err }));

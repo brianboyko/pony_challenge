@@ -128,10 +128,19 @@ var Game = function () {
     }
   }, {
     key: "move",
-    value: function move(nextMove) {
+    value: function move(nextMove, legalMoves) {
       var _this4 = this;
 
       console.log("Move:", nextMove);
+      if (nextMove === "No Move") {
+        // find ANY legal move,
+        // choose it at random.
+        // Not exactly the most *sophisticated* AI...
+        // but it moves the domokun and that's the only reason
+        // there should be a No Move solution
+        nextMove = legalMoves[~~(Math.random() * legalMoves.length)];
+        console.log("Legal Move:", nextMove);
+      }
       return new Promise(function (resolve, reject) {
         _superagent2.default.post("https://ponychallenge.trustpilot.com/pony-challenge/maze/" + _this4.mazeId).set("Content-Type", "application/json").send({
           direction: nextMove
@@ -143,7 +152,7 @@ var Game = function () {
             return _this4.getMaze();
           }
         }).then(function (newMaze) {
-          resolve({ maze: newMaze, state: _this4.state });
+          resolve({ maze: newMaze, state: _this4.state, lastMove: nextMove });
         }).catch(function (err) {
           console.error(err);
           reject(err);

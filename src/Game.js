@@ -94,8 +94,17 @@ class Game {
         });
     });
   }
-  move(nextMove) {
+  move(nextMove, legalMoves) {
     console.log("Move:", nextMove);
+    if (nextMove === "No Move") {
+      // find ANY legal move,
+      // choose it at random.
+      // Not exactly the most *sophisticated* AI...
+      // but it moves the domokun and that's the only reason
+      // there should be a No Move solution
+      nextMove = legalMoves[~~(Math.random() * legalMoves.length)];
+      console.log("Legal Move:", nextMove);
+    }
     return new Promise((resolve, reject) => {
       request
         .post(
@@ -116,7 +125,7 @@ class Game {
           }
         })
         .then(newMaze => {
-          resolve({ maze: newMaze, state: this.state });
+          resolve({ maze: newMaze, state: this.state, lastMove: nextMove });
         })
         .catch(err => {
           console.error(err);

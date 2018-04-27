@@ -24,31 +24,47 @@ var end = function end(ending) {
   console.log("Game Over:", ending);
 };
 
-var calcMove = function calcMove(maze) {
-  var move = (0, _djikstra2.default)(maze);
-  console.log(maze.print(move.path));
-  return move.nextMove;
+var calcMove = function calcMove(maze, priorMove) {
+  var d = (0, _djikstra2.default)(maze, priorMove);
+  console.log(maze.print(d.path));
+  return { nextMove: d.nextMove, legalMoves: d.legalMoves };
 };
-var count = 0;
 
+var count = 0;
+var priorMove = null;
 var promiseLoop = function promiseLoop(g, maze) {
   console.log("move#", count++);
-  var move = calcMove(maze);
-  return g.move(move).then(function (postMove) {
+
+  var _calcMove = calcMove(maze, priorMove),
+      nextMove = _calcMove.nextMove,
+      legalMoves = _calcMove.legalMoves;
+
+  console.log({ nextMove: nextMove, legalMoves: legalMoves });
+  priorMove = nextMove;
+  return g.move(nextMove, legalMoves).then(function (postMove) {
+    priorMove = postMove.lastMove;
     if (postMove.state !== "active") {
       console.log("postMove.state", postMove.state);
-      return "done";
+      if (postMove.state === "won") {
+        return "CONGRATULATIONS!";
+      }
+      return postMove.state;
     } else {
       return delayLoop(g, postMove.maze);
     }
   });
 };
 
+var DELAY = 0;
 var delayLoop = function delayLoop(g, maze) {
   return new Promise(function (resolve) {
-    setTimeout(function () {
-      return resolve(promiseLoop(g, maze));
-    }, 2000);
+    if (DELAY) {
+      setTimeout(function () {
+        return resolve(promiseLoop(g, maze));
+      }, 2000);
+    } else {
+      resolve(promiseLoop(g, maze));
+    }
   });
 };
 

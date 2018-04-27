@@ -61,9 +61,10 @@ class DjikstraMap {
 // find the shortest distance from the pony position to every other
 // (reachable) destination.
 
-const djikstra = maze => {
+const djikstra = (maze, priorMove) => {
   const { ponyPos, domoPos, exitPos } = maze;
   // distances that are unknown are assumed to be infinity
+  console.log("djikstra");
   const djikstraMap = new DjikstraMap(maze.getLength());
 
   // don't visit me if I don't exist, or I contain a monster, or you've visited before.
@@ -133,10 +134,32 @@ const djikstra = maze => {
     }
     throw new Error("This should never happen - no move", a, b);
   };
+  const getLegalMoves = priorMove => {
+    let returningMove = oppositeDirection[priorMove];
+    console.log({ priorMove, returningMove });
+    let square = maze.getSquare(ponyPos);
+    let legalMoves = ["west", "east", "north", "south"].filter(dir => {
+      return square[dir] !== null;
+    });
+    // if there's more than one legal move, remove any
+    // that have a monster, as that will end the game
+    if (legalMoves.length > 1) {
+      legalMoves = legalMoves.filter(dir => !square[dir].isDomo);
+    }
+    // if there's still more than one legal move, try *not* to backtrack
+    if (priorMove && legalMoves.length > 1) {
+      legalMoves = legalMoves.filter(
+        dir => dir !== returningMove
+      );
+    }
+    return legalMoves;
+  };
+
   return {
     map: djikstraMap.getMap(),
     path: pathway,
     visitedList: djikstraMap.getVisitedList(),
+    legalMoves: getLegalMoves(priorMove),
     nextMove: pathway ? getNextMove(ponyPos, pathway[0]) : "No Move" // only first two values actually used;
   };
 };

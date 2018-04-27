@@ -38,10 +38,10 @@ class Square {
       middle = "P";
     } else if (this.isExit) {
       middle = "E";
-    } else if (pathList && pathList.includes(this.position)){
-      middle = "."
+    } else if (pathList && pathList.includes(this.position)) {
+      middle = ".";
     } else {
-      middle = " "
+      middle = " ";
     }
     return [
       ["+", this.north === null ? "-" : " ", "+"].join(""),
@@ -106,8 +106,8 @@ class Maze {
   getMaze() {
     return this.maze;
   }
-  getSquare(index){
-    return this.maze[index]
+  getSquare(index) {
+    return this.maze[index];
   }
   getLength() {
     return this.width * this.height;
