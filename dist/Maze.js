@@ -67,6 +67,8 @@ var Square = function () {
         middle = "E";
       } else if (pathList && pathList.includes(this.position)) {
         middle = ".";
+      } else {
+        middle = " ";
       }
       return [["+", this.north === null ? "-" : " ", "+"].join(""), [this.west === null ? "|" : " ", middle, this.east === null ? "|" : " "].join(""), ["+", this.south === null ? "-" : " ", "+"].join("")];
     }
@@ -83,7 +85,6 @@ var Maze = function () {
 
     _classCallCheck(this, Maze);
 
-    console.log({ ponyPos: ponyPos, domoPos: domoPos, exitPos: exitPos });
     this.maze = [new Square(0, mazeWidth, mazeHeight, {
       ponyPos: ponyPos,
       domoPos: domoPos,

@@ -4,8 +4,6 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
-
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 var _superagent = require("superagent");
@@ -42,28 +40,12 @@ var Game = function () {
     if (difficulty < 0 || isNaN(difficulty)) {
       difficulty = 0;
     }
+    this.state = "active", this.legalMove = true;
     this.width = width;
     this.height = height;
     this.playerName = playerName;
     this.difficulty = difficulty;
     this.mazeId = null;
-    this.pony = {
-      x: null,
-      y: null,
-      position: null
-    };
-    this.exit = {
-      x: null,
-      y: null,
-      position: null
-    };
-    this.domokun = {
-      x: null,
-      y: null,
-      position: null
-    };
-    this.mazeData = null;
-    this.mazePrint = null;
     this.maze = null;
   }
 
@@ -89,7 +71,7 @@ var Game = function () {
     }
   }, {
     key: "setCharacter",
-    value: function setCharacter(character, position, width, height) {
+    value: function setCharacter(character, position) {
       this[character] = {
         x: position % width,
         y: ~~(position / height),
@@ -107,36 +89,25 @@ var Game = function () {
           return _this2.getMaze();
         });
       }
-      return new Promise(function (resolve, reject) {
-        return Promise.all([new Promise(function (resolve, reject) {
-          return _superagent2.default.get("https://ponychallenge.trustpilot.com/pony-challenge/maze/" + _this2.mazeId).set("Content-Type", "application/json").then(function (response) {
-            return resolve(response);
-          });
-        }), new Promise(function (resolve, reject) {
-          return _superagent2.default.get("https://ponychallenge.trustpilot.com/pony-challenge/maze/" + _this2.mazeId + "/print").set("Content-Type", "application/json").then(function (response) {
-            return resolve(response);
-          });
-        })]).then(function (_ref2) {
-          var _ref3 = _slicedToArray(_ref2, 2),
-              maze = _ref3[0],
-              print = _ref3[1];
+      return new Promise(function (resolve, reject1) {
+        return _superagent2.default.get("https://ponychallenge.trustpilot.com/pony-challenge/maze/" + _this2.mazeId).set("Content-Type", "application/json").then(function (serverMaze) {
+          var _serverMaze$body = serverMaze.body,
+              pony = _serverMaze$body.pony,
+              domokun = _serverMaze$body.domokun,
+              size = _serverMaze$body.size,
+              data = _serverMaze$body.data;
 
-          var _maze$body = maze.body,
-              pony = _maze$body.pony,
-              domokun = _maze$body.domokun,
-              size = _maze$body.size,
-              data = _maze$body.data;
-
-          var endPoint = maze.body["end-point"];
-          _this2.setCharacter("pony", pony[0], size[0], size[1]);
-          _this2.setCharacter("exit", endPoint[0], size[0], size[1]);
-          _this2.setCharacter("domokun", domokun[0], size[0], size[1]);
-          _this2.mazeData = data;
-          _this2.mazePrint = print.body;
-          resolve();
+          var endPoint = serverMaze.body["end-point"];
+          console.log("inGetMaze()", { pony: pony, domokun: domokun, endPoint: endPoint });
+          _this2.maze = new _Maze2.default(data, _this2.width, _this2.height, {
+            ponyPos: pony[0],
+            domoPos: domokun[0],
+            exitPos: endPoint[0]
+          });
+          resolve(_this2.maze);
         }).catch(function (err) {
           console.error(err);
-          reject(err);
+          rejectOuter(err);
         });
       });
     }
@@ -146,26 +117,35 @@ var Game = function () {
       var _this3 = this;
 
       return new Promise(function (resolve, reject) {
+        console.log("init");
         _this3.getMaze().then(function () {
-          console.log(_this3);
-          _this3.maze = new _Maze2.default(_this3.mazeData, _this3.width, _this3.height, {
-            ponyPos: _this3.pony.position,
-            domoPos: _this3.domokun.position,
-            exitPos: _this3.exit.position
-          });
-          console.log("CONTROL");
-          console.log(_this3.mazePrint);
-          console.log("Experiment");
-          var myLittleDjikstra = (0, _djikstra2.default)(_this3.maze, {
-            ponyPos: _this3.pony.position,
-            domoPos: _this3.domokun.position,
-            exitPos: _this3.exit.position
-          });
-          console.log(myLittleDjikstra);
-          console.log(_this3.maze.print(myLittleDjikstra.path));
-          resolve("DONE");
+          resolve({ maze: _this3.maze, state: "active" });
         }).catch(function (err) {
           console.log(err);
+          reject(err);
+        });
+      });
+    }
+  }, {
+    key: "move",
+    value: function move(nextMove) {
+      var _this4 = this;
+
+      console.log("Move:", nextMove);
+      return new Promise(function (resolve, reject) {
+        _superagent2.default.post("https://ponychallenge.trustpilot.com/pony-challenge/maze/" + _this4.mazeId).set("Content-Type", "application/json").send({
+          direction: nextMove
+        }).then(function (response) {
+          _this4.state = response.body.state;
+          if (response.body.state !== "active") {
+            resolve({ state: response.body.state });
+          } else {
+            return _this4.getMaze();
+          }
+        }).then(function (newMaze) {
+          resolve({ maze: newMaze, state: _this4.state });
+        }).catch(function (err) {
+          console.error(err);
           reject(err);
         });
       });

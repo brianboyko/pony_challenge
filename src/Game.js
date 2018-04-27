@@ -13,28 +13,12 @@ class Game {
     if (difficulty < 0 || isNaN(difficulty)) {
       difficulty = 0;
     }
+    (this.state = "active"), (this.legalMove = true);
     this.width = width;
     this.height = height;
     this.playerName = playerName;
     this.difficulty = difficulty;
     this.mazeId = null;
-    this.pony = {
-      x: null,
-      y: null,
-      position: null
-    };
-    this.exit = {
-      x: null,
-      y: null,
-      position: null
-    };
-    this.domokun = {
-      x: null,
-      y: null,
-      position: null
-    };
-    this.mazeData = null;
-    this.mazePrint = null;
     this.maze = null;
   }
   getMazeId() {
@@ -58,7 +42,7 @@ class Game {
         });
     });
   }
-  setCharacter(character, position, width, height) {
+  setCharacter(character, position) {
     this[character] = {
       x: position % width,
       y: ~~(position / height),
@@ -68,71 +52,74 @@ class Game {
   getMaze() {
     if (!this.mazeId) {
       // ensures we get a maze ID first.
-      return this.getMazeId().then(() => this.getMaze());
+      return this.getMazeId().then(() => {
+        return this.getMaze();
+      });
     }
-    return new Promise((resolve, reject) =>
-      Promise.all([
-        new Promise((resolve, reject) =>
-          request
-            .get(
-              `https://ponychallenge.trustpilot.com/pony-challenge/maze/${
-                this.mazeId
-              }`
-            )
-            .set("Content-Type", "application/json")
-            .then(response => resolve(response))
-        ),
-        new Promise((resolve, reject) =>
-          request
-            .get(
-              `https://ponychallenge.trustpilot.com/pony-challenge/maze/${
-                this.mazeId
-              }/print`
-            )
-            .set("Content-Type", "application/json")
-            .then(response => resolve(response))
+    return new Promise((resolve, reject1) =>
+      request
+        .get(
+          `https://ponychallenge.trustpilot.com/pony-challenge/maze/${
+            this.mazeId
+          }`
         )
-      ])
-        .then(([maze, print]) => {
-          const { pony, domokun, size, data } = maze.body;
-          const endPoint = maze.body["end-point"];
-          this.setCharacter("pony", pony[0], size[0], size[1]);
-          this.setCharacter("exit", endPoint[0], size[0], size[1]);
-          this.setCharacter("domokun", domokun[0], size[0], size[1]);
-          this.mazeData = data;
-          this.mazePrint = print.body;
-          resolve();
+        .set("Content-Type", "application/json")
+        .then(serverMaze => {
+          const { pony, domokun, size, data } = serverMaze.body;
+          const endPoint = serverMaze.body["end-point"];
+          console.log("inGetMaze()", { pony, domokun, endPoint });
+          this.maze = new Maze(data, this.width, this.height, {
+            ponyPos: pony[0],
+            domoPos: domokun[0],
+            exitPos: endPoint[0]
+          });
+          resolve(this.maze);
         })
         .catch(err => {
           console.error(err);
-          reject(err);
+          rejectOuter(err);
         })
     );
   }
   init() {
     return new Promise((resolve, reject) => {
+      console.log("init");
       this.getMaze()
         .then(() => {
-          console.log(this);
-          this.maze = new Maze(this.mazeData, this.width, this.height, {
-            ponyPos: this.pony.position,
-            domoPos: this.domokun.position,
-            exitPos: this.exit.position
-          });
-          console.log("CONTROL");
-          console.log(this.mazePrint);
-          console.log("Experiment");
-          const myLittleDjikstra = djikstra(this.maze, {
-            ponyPos: this.pony.position,
-            domoPos: this.domokun.position,
-            exitPos: this.exit.position
-          });
-          console.log(myLittleDjikstra);
-          console.log(this.maze.print(myLittleDjikstra.path));
-          resolve("DONE");
+          resolve({ maze: this.maze, state: "active" });
         })
         .catch(err => {
           console.log(err);
+          reject(err);
+        });
+    });
+  }
+  move(nextMove) {
+    console.log("Move:", nextMove);
+    return new Promise((resolve, reject) => {
+      request
+        .post(
+          `https://ponychallenge.trustpilot.com/pony-challenge/maze/${
+            this.mazeId
+          }`
+        )
+        .set("Content-Type", "application/json")
+        .send({
+          direction: nextMove
+        })
+        .then(response => {
+          this.state = response.body.state;
+          if (response.body.state !== "active") {
+            resolve({ state: response.body.state });
+          } else {
+            return this.getMaze();
+          }
+        })
+        .then(newMaze => {
+          resolve({ maze: newMaze, state: this.state });
+        })
+        .catch(err => {
+          console.error(err);
           reject(err);
         });
     });

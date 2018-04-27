@@ -40,7 +40,9 @@ class Square {
       middle = "E";
     } else if (pathList && pathList.includes(this.position)){
       middle = "."
-    } 
+    } else {
+      middle = " "
+    }
     return [
       ["+", this.north === null ? "-" : " ", "+"].join(""),
       [
@@ -55,7 +57,6 @@ class Square {
 
 class Maze {
   constructor(data, mazeWidth, mazeHeight, { ponyPos, domoPos, exitPos }) {
-    console.log({ ponyPos, domoPos, exitPos });
     this.maze = [
       new Square(0, mazeWidth, mazeHeight, {
         ponyPos,

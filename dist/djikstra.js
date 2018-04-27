@@ -80,9 +80,7 @@ var DjikstraMap = function () {
   }, {
     key: "getPath",
     value: function getPath(start, end) {
-      console.log(start, end);
       if (!this.isVisited(end)) {
-        console.log("end not visited");
         console.log(this.getNode(end));
         return null;
       }
@@ -100,13 +98,12 @@ var DjikstraMap = function () {
 // find the shortest distance from the pony position to every other
 // (reachable) destination.
 
-
-var djikstra = function djikstra(maze, _ref2) {
-  var ponyPos = _ref2.ponyPos,
-      domoPos = _ref2.domoPos,
-      exitPos = _ref2.exitPos;
-
+var djikstra = function djikstra(maze) {
+  var ponyPos = maze.ponyPos,
+      domoPos = maze.domoPos,
+      exitPos = maze.exitPos;
   // distances that are unknown are assumed to be infinity
+
   var djikstraMap = new DjikstraMap(maze.getLength());
 
   // don't visit me if I don't exist, or I contain a monster, or you've visited before.
@@ -144,10 +141,32 @@ var djikstra = function djikstra(maze, _ref2) {
   _visitVert(djikstraMap, maze.getSquare(ponyPos));
 
   var exitAccessible = djikstraMap.isVisited(exitPos);
+  var pathway = djikstraMap.getPath(ponyPos, exitPos);
+  var getNextMove = function getNextMove(a, b) {
+    var calc = a - b;
+    // if it's not one-away,
+    // it must be north and south.
+    // all negative numbers mean north;
+    // all positive numbers mean south;
+    if (calc === 1) {
+      return "west";
+    }
+    if (calc === -1) {
+      return "east";
+    }
+    if (calc > 0) {
+      return "north";
+    }
+    if (calc < 0) {
+      return "south";
+    }
+    throw new Error("This should never happen - no move", a, b);
+  };
   return {
     map: djikstraMap.getMap(),
-    path: djikstraMap.getPath(ponyPos, exitPos),
-    visitedList: djikstraMap.getVisitedList()
+    path: pathway,
+    visitedList: djikstraMap.getVisitedList(),
+    nextMove: pathway ? getNextMove(ponyPos, pathway[0]) : "No Move" // only first two values actually used;
   };
 };
 
