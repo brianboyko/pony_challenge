@@ -1,5 +1,5 @@
 import Game from "./Game";
-import djikstra from "./djikstra";
+import Djikstra from "./Djikstra";
 import yargs from "yargs";
 
 console.log("Starting Pony Challenge Solver");
@@ -42,10 +42,11 @@ let g = new Game({
 });
 
 const calcMove = (maze, priorMove) => {
-  let d = djikstra(maze, priorMove);
-  console.log(maze.print(d.path));
-  return { nextMove: d.nextMove, legalMoves: d.legalMoves };
+  let move = new Djikstra(maze, priorMove).solve();
+  console.log(maze.print(move.pathway));
+  return { nextMove: move.nextMove, legalMoves: move.legalMoves };
 };
+
 // count and priorMove available to promiseLoop via closure.
 let count = 0;
 let priorMove = null;
@@ -60,7 +61,7 @@ const promiseLoop = (g, maze) => {
         return "CONGRATULATIONS!";
       }
       if (postMove.state === "over") {
-        return "THE DOMOKUN HAS EATEN YOU. DISHONOR ON YOU. DISHONOR ON YOUR FAMILY. DISHONOR ON YOUR COW";
+        return "THE DOMOKUN HAS EATEN THE PONY. DISHONOR ON YOU. DISHONOR ON YOUR FAMILY. DISHONOR ON YOUR COW";
       }
       return postMove.state;
     } else {
@@ -79,6 +80,7 @@ const delayLoop = (g, maze) =>
     }
   });
 
+// start the game
 g
   .init()
   .then(({ maze, state }) => {

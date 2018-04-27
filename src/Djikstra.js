@@ -9,6 +9,27 @@ const oppositeDirection = {
   east: "west"
 };
 
+const getNextMove = (a, b) => {
+  let calc = a - b;
+  // if it's not one-away,
+  // it must be north and south.
+  // all negative numbers mean north;
+  // all positive numbers mean south;
+  if (calc === 1) {
+    return "west";
+  }
+  if (calc === -1) {
+    return "east";
+  }
+  if (calc > 0) {
+    return "north";
+  }
+  if (calc < 0) {
+    return "south";
+  }
+  throw new Error("This should never happen", a, b);
+};
+
 class DjikstraMap {
   constructor(length) {
     this.map = Array(length).fill({
@@ -61,31 +82,32 @@ class DjikstraMap {
 // find the shortest distance from the pony position to every other
 // (reachable) destination.
 
-const djikstra = (maze, priorMove) => {
-  const { ponyPos, domoPos, exitPos } = maze;
-  // distances that are unknown are assumed to be infinity
-  const djikstraMap = new DjikstraMap(maze.getLength());
-
-  // don't visit me if I don't exist, or I contain a monster, or you've visited before.
-  const _visitMe = (workingMap, direction, node) =>
-    node[direction] !== null &&
-    !node[direction].isDomo &&
-    !workingMap.isVisited(node.position);
-
-  const _visitVert = (
-    dMap,
-    currNode,
-    prevNode = null,
-    originDirection = null
-  ) => {
+class Djikstra {
+  constructor(maze, priorMove = null) {
+    this.ponyPos = maze.ponyPos;
+    this.domoPos = maze.domoPos;
+    this.exitPos = maze.exitPos;
+    this.maze = maze;
+    this.priorMove = priorMove;
+    this.map = new DjikstraMap(this.maze.getLength());
+    this.isExitAccessible = null; // null in this case is unknown.
+  }
+  visitMe(direction, node) {
+    return (
+      node[direction] !== null &&
+      !node[direction].isDomo &&
+      !this.map.isVisited(node.position)
+    );
+  }
+  visitVert(currNode, prevNode = null, originDirection = null) {
     // distance should only be 0 for our origin, otherwise prevNode will be defined.
     // for the current vertex, calculate the distance of each neighbor from the start (i.e., add one);
-    let distance = prevNode ? dMap.getDistance(prevNode.position) + 1 : 0;
+    const distance = prevNode ? this.map.getDistance(prevNode.position) + 1 : 0;
 
     // if that distance is less than the current best known route, let the
-    // dMap reflect our shorter distance and the new previous node (by index/position);
-    if (distance < dMap.getDistance(currNode.position)) {
-      dMap.setEntry(currNode.position, {
+    // this.map reflect our shorter distance and the new previous node (by index/position);
+    if (distance < this.map.getDistance(currNode.position)) {
+      this.map.setEntry(currNode.position, {
         distance,
         previous: prevNode ? prevNode.position : null
       });
@@ -95,47 +117,26 @@ const djikstra = (maze, priorMove) => {
     ["north", "west", "south", "east"].forEach(direction => {
       if (
         direction !== originDirection &&
-        _visitMe(dMap, direction, currNode)
+        this.visitMe(direction, currNode)
       ) {
-        _visitVert(
-          dMap,
+        this.visitVert(
           currNode[direction],
           currNode,
           oppositeDirection[direction]
         );
       }
     });
-    dMap.setVisited(currNode.position);
+    this.map.setVisited(currNode.position);
     // add the current vertex to the list of visited vertices
-  };
-
-  _visitVert(djikstraMap, maze.getSquare(ponyPos));
-
-  const exitAccessible = djikstraMap.isVisited(exitPos);
-  const pathway = djikstraMap.getPath(ponyPos, exitPos);
-  const getNextMove = (a, b) => {
-    let calc = a - b;
-    // if it's not one-away,
-    // it must be north and south.
-    // all negative numbers mean north;
-    // all positive numbers mean south;
-    if (calc === 1) {
-      return "west";
-    }
-    if (calc === -1) {
-      return "east";
-    }
-    if (calc > 0) {
-      return "north";
-    }
-    if (calc < 0) {
-      return "south";
-    }
-    throw new Error("This should never happen - no move", a, b);
-  };
-  const getLegalMoves = priorMove => {
-    let returningMove = oppositeDirection[priorMove];
-    let square = maze.getSquare(ponyPos);
+  }
+  traverse() {
+    this.visitVert(this.maze.getSquare(this.ponyPos));
+    this.isExitAccessible = this.map.isVisited(this.exitPos);
+    return this;
+  }
+  getLegalMoves() {
+    let returningMove = oppositeDirection[this.priorMove];
+    let square = this.maze.getSquare(this.ponyPos);
     let legalMoves = ["west", "east", "north", "south"].filter(dir => {
       return square[dir] !== null;
     });
@@ -145,21 +146,21 @@ const djikstra = (maze, priorMove) => {
       legalMoves = legalMoves.filter(dir => !square[dir].isDomo);
     }
     // if there's still more than one legal move, try *not* to backtrack
-    if (priorMove && legalMoves.length > 1) {
-      legalMoves = legalMoves.filter(
-        dir => dir !== returningMove
-      );
+    if (this.priorMove && legalMoves.length > 1) {
+      legalMoves = legalMoves.filter(dir => dir !== returningMove);
     }
     return legalMoves;
-  };
-
-  return {
-    map: djikstraMap.getMap(),
-    path: pathway,
-    visitedList: djikstraMap.getVisitedList(),
-    legalMoves: getLegalMoves(priorMove),
-    nextMove: pathway ? getNextMove(ponyPos, pathway[0]) : "No Move" // only first two values actually used;
-  };
-};
-
-export default djikstra;
+  }
+  solve() {
+    this.traverse();
+    const pathway = this.map.getPath(this.ponyPos, this.exitPos);
+    return {
+      map: this.map.getMap(),
+      pathway,
+      visitedList: this.map.getVisitedList(),
+      legalMoves: this.getLegalMoves(),
+      nextMove: pathway ? getNextMove(this.ponyPos, pathway[0]) : "No Move"
+    };
+  }
+}
+export default Djikstra;
